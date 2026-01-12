@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Wort-Sortier Helfer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --mc-grass: #7cbd56;
+            --mc-dirt: #8b6f47;
+            --mc-stone: #7a7a7a;
+            --mc-diamond: #5decf5;
+            --mc-gold: #fcee4b;
+            --mc-dark: #1a1a1a;
+            --mc-light: #f0f0f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background: linear-gradient(135deg, #2d5016 0%, #1a3010 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Pixelated background pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                repeating-linear-gradient(90deg, rgba(0,0,0,0.1) 0px, transparent 1px, transparent 16px, rgba(0,0,0,0.1) 17px),
+                repeating-linear-gradient(0deg, rgba(0,0,0,0.1) 0px, transparent 1px, transparent 16px, rgba(0,0,0,0.1) 17px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .game-window {
+            background: var(--mc-dirt);
+            border: 8px solid var(--mc-stone);
+            box-shadow: 
+                0 8px 0 rgba(0,0,0,0.3),
+                0 16px 32px rgba(0,0,0,0.5),
+                inset 0 0 0 4px rgba(255,255,255,0.1);
+            image-rendering: pixelated;
+        }
+
+        .title-bar {
+            background: linear-gradient(180deg, var(--mc-stone) 0%, #5a5a5a 100%);
+            padding: 20px;
+            border-bottom: 4px solid #4a4a4a;
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 24px;
+            color: var(--mc-diamond);
+            text-shadow: 
+                3px 3px 0 rgba(0,0,0,0.5),
+                0 0 20px rgba(93, 236, 245, 0.5);
+            letter-spacing: 2px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { 
+                text-shadow: 
+                    3px 3px 0 rgba(0,0,0,0.5),
+                    0 0 20px rgba(93, 236, 245, 0.5);
+            }
+            to { 
+                text-shadow: 
+                    3px 3px 0 rgba(0,0,0,0.5),
+                    0 0 30px rgba(93, 236, 245, 0.8),
+                    0 0 40px rgba(93, 236, 245, 0.4);
+            }
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: var(--mc-gold);
+            margin-top: 10px;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+        }
+
+        .content {
+            padding: 30px;
+            background: rgba(42, 42, 42, 0.8);
+        }
+
+        .status-box {
+            background: rgba(0,0,0,0.5);
+            border: 4px solid var(--mc-stone);
+            padding: 20px;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: scan 3s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .status-label {
+            font-size: 20px;
+            color: var(--mc-gold);
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+        }
+
+        .got-it-button:active {
+            transform: scale(0.98);
+        }
+
+        .input-section {
+            background: rgba(0,0,0,0.4);
+            border: 3px solid var(--mc-diamond);
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .input-label {
+            font-size: 20px;
+            color: var(--mc-diamond);
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+        }
+
+        .manual-input {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 20px;
+            background: rgba(0,0,0,0.6);
+            border: 3px solid var(--mc-grass);
+            color: var(--mc-light);
+            padding: 15px;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .manual-input:focus {
+            outline: none;
+            border-color: var(--mc-diamond);
+            box-shadow: 0 0 20px rgba(93, 236, 245, 0.3);
+        }
+
+        .manual-input::placeholder {
+            color: var(--mc-stone);
+        }
+
+        .clipboard-text {
+            font-size: 28px;
+            color: var(--mc-light);
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border: 2px solid var(--mc-grass);
+            border-radius: 0;
+            min-height: 50px;
+            word-break: break-all;
+            font-family: 'Press Start 2P', cursive;
+            line-height: 1.6;
+            letter-spacing: 2px;
+        }
+
+        .result-box {
+            background: linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.4) 100%);
+            border: 4px solid var(--mc-diamond);
+            padding: 25px;
+            margin-top: 25px;
+            box-shadow: 
+                inset 0 0 20px rgba(93, 236, 245, 0.2),
+                0 0 30px rgba(93, 236, 245, 0.3);
+            position: relative;
+        }
+
+        .result-label {
+            font-size: 22px;
+            color: var(--mc-diamond);
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+        }
+
+        .result-text {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 32px;
+            color: var(--mc-gold);
+            text-align: center;
+            padding: 20px;
+            background: rgba(0,0,0,0.4);
+            border: 3px solid var(--mc-gold);
+            text-shadow: 
+                3px 3px 0 rgba(0,0,0,0.5),
+                0 0 20px rgba(252, 238, 75, 0.5);
+            animation: result-appear 0.5s ease-out;
+            letter-spacing: 3px;
+            line-height: 1.5;
+        }
+
+        @keyframes result-appear {
+            from {
+                opacity: 0;
+                transform: scale(0.8) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .no-result {
+            color: #ff6b6b;
+            font-size: 24px;
+            animation: shake 0.5s ease-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .instructions {
+            background: rgba(0,0,0,0.4);
+            border: 3px solid var(--mc-grass);
+            padding: 20px;
+            margin-bottom: 25px;
+            transition: all 0.5s ease;
+        }
+
+        .instructions.hidden {
+            opacity: 0;
+            max-height: 0;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+            border-width: 0;
+        }
+
+        .instructions-content {
+            margin-bottom: 15px;
+        }
+
+        .instructions p {
+            font-size: 20px;
+            color: var(--mc-light);
+            line-height: 1.8;
+            margin-bottom: 12px;
+        }
+
+        .instructions strong {
+            color: var(--mc-gold);
+        }
+
+        .got-it-button {
+            font-family: 'VT323', monospace;
+            font-size: 22px;
+            background: rgba(123, 205, 86, 0.8);
+            border: 3px solid var(--mc-grass);
+            color: white;
+            padding: 12px 30px;
+            cursor: pointer;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .got-it-button:hover {
+            background: var(--mc-grass);
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(123, 205, 86, 0.5);
+        }
+
+        .got-it-button:active {
+            transform: scale(0.98);
+        }
+
+        .history-section {
+            background: rgba(0,0,0,0.4);
+            border: 3px solid var(--mc-grass);
+            padding: 20px;
+            margin-top: 25px;
+            max-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--mc-stone);
+        }
+
+        .history-title {
+            font-size: 22px;
+            color: var(--mc-gold);
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+        }
+
+        .clear-button {
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            background: rgba(255, 107, 107, 0.8);
+            border: 3px solid #ff6b6b;
+            color: white;
+            padding: 10px 20px;
+            cursor: pointer;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+
+        .clear-button:hover {
+            background: #ff6b6b;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+        }
+
+        .clear-button:active {
+            transform: scale(0.95);
+        }
+
+        .history-list {
+            overflow-y: auto;
+            max-height: 300px;
+            padding-right: 10px;
+        }
+
+        .history-list::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        .history-list::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid var(--mc-stone);
+        }
+
+        .history-list::-webkit-scrollbar-thumb {
+            background: var(--mc-grass);
+            border: 2px solid var(--mc-stone);
+        }
+
+        .history-list::-webkit-scrollbar-thumb:hover {
+            background: var(--mc-diamond);
+        }
+
+        .history-item {
+            background: rgba(0,0,0,0.5);
+            border: 2px solid var(--mc-stone);
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slide-in 0.3s ease-out;
+        }
+
+        @keyframes slide-in {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .history-item.success {
+            border-left: 4px solid var(--mc-diamond);
+        }
+
+        .history-item.failed {
+            border-left: 4px solid #ff6b6b;
+        }
+
+        .history-scrambled {
+            font-size: 18px;
+            color: var(--mc-light);
+        }
+
+        .history-arrow {
+            font-size: 20px;
+            color: var(--mc-gold);
+            margin: 0 10px;
+        }
+
+        .history-result {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            color: var(--mc-diamond);
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+        }
+
+        .history-result.failed {
+            color: #ff6b6b;
+        }
+
+        .history-empty {
+            text-align: center;
+            color: var(--mc-stone);
+            font-size: 20px;
+            padding: 40px;
+        }
+
+        .pixel-corner {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: var(--mc-gold);
+        }
+
+        .pixel-corner.tl { top: -4px; left: -4px; }
+        .pixel-corner.tr { top: -4px; right: -4px; }
+        .pixel-corner.bl { bottom: -4px; left: -4px; }
+        .pixel-corner.br { bottom: -4px; right: -4px; }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 16px;
+            }
+            
+            .subtitle {
+                font-size: 14px;
+            }
+
+            .result-text {
+                font-size: 20px;
+            }
+
+            .manual-input {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="game-window">
+            <div class="title-bar">
+                <h1>⛏️ MINECRAFT WORT-HELFER ⛏️</h1>
+                <div class="subtitle">Item Buchstaben Sortierer</div>
+            </div>
+            
+            <div class="content">
+                <div class="instructions" id="instructions">
+                    <div class="instructions-content">
+                        <p><strong>🎮 So funktioniert's:</strong></p>
+                        <p>1. Kopiere Text (z.B. im Spiel mit <strong>Strg+C</strong>)</p>
+                        <p>2. Wechsle zurück zum Browser-Tab mit dieser Seite</p>
+                        <p>3. 💥 Automatisch gelöst - kein Klicken nötig!</p>
+                        <p><strong>💡 TIPP:</strong> Oder tippe direkt ins Eingabefeld!</p>
+                        <p><strong>⚠️ WICHTIG:</strong> Beim ersten Mal "Zulassen" klicken!</p>
+                    </div>
+                    <button class="got-it-button" onclick="hideInstructions()">✓ ALLES KLAR</button>
+                </div>
+
+                <div class="input-section">
+                    <div class="input-label">✏️ BUCHSTABEN EINGEBEN:</div>
+                    <input type="text" id="manualInput" class="manual-input" placeholder="z.B. NDSTOREE" />
+                </div>
+
+                <div class="status-box">
+                    <div class="status-label">📋 KOPIERTE/EINGEGEBENE BUCHSTABEN:</div>
+                    <div class="clipboard-text" id="clipboardText">Warte auf Eingabe...</div>
+                </div>
+
+                <div class="result-box">
+                    <div class="pixel-corner tl"></div>
+                    <div class="pixel-corner tr"></div>
+                    <div class="pixel-corner bl"></div>
+                    <div class="pixel-corner br"></div>
+                    
+                    <div class="result-label">💎 GEFUNDENES ITEM:</div>
+                    <div class="result-text" id="resultText">---</div>
+                </div>
+
+                <div class="history-section">
+                    <div class="history-header">
+                        <div class="history-title">📜 VERLAUF</div>
+                        <button class="clear-button" id="clearHistory" onclick="clearHistory()">🗑️ LÖSCHEN</button>
+                    </div>
+                    <div class="history-list" id="historyList">
+                        <div class="history-empty">Noch keine Einträge...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Umfassende Liste von Minecraft Items (deutsche und englische Namen)
+        const minecraftItems = [
+            // Blöcke
+            "STONE", "GRASS", "DIRT", "COBBLESTONE", "BEDROCK", "SAND", "GRAVEL", "GOLD_ORE", "IRON_ORE",
+            "COAL_ORE", "WOOD", "LEAVES", "GLASS", "LAPIS_ORE", "SANDSTONE", "WOOL", "GOLD_BLOCK",
+            "IRON_BLOCK", "BRICK", "TNT", "BOOKSHELF", "OBSIDIAN", "TORCH", "CHEST", "DIAMOND_ORE",
+            "DIAMOND_BLOCK", "CRAFTING_TABLE", "FURNACE", "LADDER", "SNOW", "ICE", "CLAY", "FENCE",
+            "NETHERRACK", "SOUL_SAND", "GLOWSTONE", "PUMPKIN", "CAKE", "TRAPDOOR", "STONE_BRICK",
+            "MELON", "MYCELIUM", "NETHER_BRICK", "ANVIL", "EMERALD_ORE", "EMERALD_BLOCK", "QUARTZ_ORE",
+            "REDSTONE", "COAL", "DIAMOND", "IRON_INGOT", "GOLD_INGOT", "EMERALD", "QUARTZ",
+            
+            // Werkzeuge
+            "WOODEN_PICKAXE", "STONE_PICKAXE", "IRON_PICKAXE", "GOLDEN_PICKAXE", "DIAMOND_PICKAXE",
+            "WOODEN_AXE", "STONE_AXE", "IRON_AXE", "GOLDEN_AXE", "DIAMOND_AXE",
+            "WOODEN_SHOVEL", "STONE_SHOVEL", "IRON_SHOVEL", "GOLDEN_SHOVEL", "DIAMOND_SHOVEL",
+            "WOODEN_HOE", "STONE_HOE", "IRON_HOE", "GOLDEN_HOE", "DIAMOND_HOE",
+            "PICKAXE", "AXE", "SHOVEL", "HOE", "SWORD", "BOW", "ARROW", "SHEARS", "BUCKET",
+            "FISHING_ROD", "FLINT_AND_STEEL", "COMPASS", "CLOCK", "MAP",
+            
+            // Waffen & Rüstung
+            "WOODEN_SWORD", "STONE_SWORD", "IRON_SWORD", "GOLDEN_SWORD", "DIAMOND_SWORD",
+            "LEATHER_HELMET", "LEATHER_CHESTPLATE", "LEATHER_LEGGINGS", "LEATHER_BOOTS",
+            "CHAINMAIL_HELMET", "CHAINMAIL_CHESTPLATE", "CHAINMAIL_LEGGINGS", "CHAINMAIL_BOOTS",
+            "IRON_HELMET", "IRON_CHESTPLATE", "IRON_LEGGINGS", "IRON_BOOTS",
+            "GOLDEN_HELMET", "GOLDEN_CHESTPLATE", "GOLDEN_LEGGINGS", "GOLDEN_BOOTS",
+            "DIAMOND_HELMET", "DIAMOND_CHESTPLATE", "DIAMOND_LEGGINGS", "DIAMOND_BOOTS",
+            "HELMET", "CHESTPLATE", "LEGGINGS", "BOOTS", "SHIELD",
+            
+            // Essen
+            "APPLE", "BREAD", "PORKCHOP", "COOKED_PORKCHOP", "BEEF", "COOKED_BEEF", "CHICKEN",
+            "COOKED_CHICKEN", "FISH", "COOKED_FISH", "COOKIE", "MELON_SLICE", "CARROT", "POTATO",
+            "BAKED_POTATO", "GOLDEN_APPLE", "GOLDEN_CARROT", "CAKE", "PUMPKIN_PIE", "MUSHROOM_STEW",
+            
+            // Materialien
+            "STICK", "COAL", "CHARCOAL", "DIAMOND", "IRON_INGOT", "GOLD_INGOT", "STRING", "FEATHER",
+            "GUNPOWDER", "WHEAT", "FLINT", "LEATHER", "BRICK", "CLAY_BALL", "PAPER", "BOOK",
+            "SLIMEBALL", "EGG", "SUGAR", "BONE", "INK_SAC", "REDSTONE", "GLOWSTONE_DUST",
+            "BLAZE_ROD", "BLAZE_POWDER", "ENDER_PEARL", "ENDER_EYE", "NETHER_STAR",
+            
+            // Newer items
+            "NETHERITE", "NETHERITE_INGOT", "NETHERITE_SWORD", "NETHERITE_PICKAXE", "NETHERITE_AXE",
+            "NETHERITE_SHOVEL", "NETHERITE_HOE", "NETHERITE_HELMET", "NETHERITE_CHESTPLATE",
+            "NETHERITE_LEGGINGS", "NETHERITE_BOOTS", "ANCIENT_DEBRIS", "CRYING_OBSIDIAN",
+            "RESPAWN_ANCHOR", "LODESTONE", "BLACKSTONE", "BASALT", "WARPED_PLANKS", "CRIMSON_PLANKS",
+            
+            // Deutsche Namen (häufig verwendet)
+            "STEIN", "GRAS", "ERDE", "BRUCHSTEIN", "GRUNDGESTEIN", "DIAMANT", "SMARAGD",
+            "EISENBARREN", "GOLDBARREN", "KOHLE", "STOCK", "BROT", "APFEL", "SCHWERT",
+            "SPITZHACKE", "AXT", "SCHAUFEL", "HACKE", "BOGEN", "PFEIL", "EIMER", "ANGELRUTE",
+            "KOMPASS", "UHR", "KARTE", "SCHERE", "SCHILD", "HELM", "BRUSTPANZER", "HOSE", "STIEFEL",
+            
+            // Weitere deutsche Namen
+            "ANGEL", "GOLDHELM", "EISENHELM", "DIAMANTHELM", "GOLDHOSE", "EISENHOSE", "DIAMANTHOSE",
+            "GOLDSTIEFEL", "EISENSTIEFEL", "DIAMANTSTIEFEL", "GOLDBRUSTPANZER", "EISENBRUSTPANZER",
+            "DIAMANTBRUSTPANZER", "STEINSCHWERT", "EISENSCHWERT", "GOLDSCHWERT", "DIAMANTSCHWERT",
+            "HOLZSCHWERT", "STEINSPITZHACKE", "EISENSPITZHACKE", "GOLDSPITZHACKE", "DIAMANTSPITZHACKE",
+            "HOLZSPITZHACKE", "STEINAXT", "EISENAXT", "GOLDAXT", "DIAMANTAXT", "HOLZAXT",
+            "STEINSCHAUFEL", "EISENSCHAUFEL", "GOLDSCHAUFEL", "DIAMANTSCHAUFEL", "HOLZSCHAUFEL",
+            "STEINHACKE", "EISENHACKE", "GOLDHACKE", "DIAMANTHACKE", "HOLZHACKE",
+            
+            // Mehr Items
+            "REDCLAY", "REDBRICK", "ENDERCHEST", "ENDERPEARL", "ENDEREYE", "BLAZEROD", "BLAZEPOWDER",
+            "GOLDAPPLE", "COOKEDBEEF", "COOKEDCHICKEN", "COOKEDFISH", "COOKEDPORK", "BAKEDPOTATO",
+            "PUMPKINPIE", "MUSHROOMSTEW", "GOLDENCARROT", "GOLDENAPPLE", "IRONORE", "GOLDORE",
+            "COALORE", "DIAMONDORE", "EMERALDORE", "LAPISORE", "REDSTONEORE", "QUARTZORE",
+            "IRONBLOCK", "GOLDBLOCK", "DIAMONDBLOCK", "EMERALDBLOCK", "COALBLOCK", "LAPISBLOCK",
+            "REDSTONEBLOCK", "QUARTZBLOCK", "STONEBRICK", "NETHERBRICK", "ENDSTONE", "ENDERSTONE",
+            
+            // Noch mehr deutsche Varianten
+            "ROTSTEIN", "LEUCHTSTEIN", "GLOWSTONE", "SEELENSAND", "SOULSAND", "NETHERSTEIN", 
+            "ENDSTEIN", "OBSIDIAN", "WEINENDEROBSIDIAN", "CRYINGOBSIDIAN", "LODESTONE", "LEITSTEIN",
+            "SCHWARZSTEIN", "BASALT", "NETHERGOLD", "NETHERGOLDORE", "ANTIKERSCHUTT", "ANCIENTDEBRIS",
+            "NETHERITBARREN", "NETHERITSCHWERT", "NETHERITSPITZHACKE", "NETHERITAXT", "NETHERITSCHAUFEL",
+            "NETHERITHACKE", "NETHERITHELM", "NETHERITBRUSTPANZER", "NETHERITHOSE", "NETHERITSTIEFEL",
+            
+            // Zusätzliche Items die oft vorkommen
+            "ZIEGELSTEIN", "ZIEGEL", "LEITER", "TRUHE", "OFEN", "WERKTISCH", "CRAFTING", "AMBOSS",
+            "FACKEL", "ZAUN", "FALLTUER", "TRAPDOOR", "BETT", "BED", "KUERBIS", "MELONE", "KUCHEN",
+            "ZUCKER", "WEIZEN", "SAMEN", "SEEDS", "KNOCHEN", "FEDER", "LEDER", "WOLLE", "FADEN",
+            "SCHIESSPULVER", "GUNPOWDER", "FEUERSTEIN", "FLINTANDSTEEL", "FEUERZEUG", "SCHLEIMBALL",
+            "SLIME", "TINTENBEUTEL", "INKSACK", "PAPIER", "BUCH", "KARTE", "KRAEHE",
+            
+            // FARBIGE WOLLE (alle 16 Farben)
+            "WEISSEWOLLE", "ORANGEWOLLE", "MAGENTAWOLLE", "HELLBLAUEWOLLE", "GELBEWOLLE", 
+            "HELLGRUENEWOLLE", "ROSAWOLLE", "DUNKELGRAUEWOLLE", "HELLGRAUEWOLLE", "TUERKISEWOLLE",
+            "VIOLETTEWOLLE", "BLAUEWOLLE", "BRAUNEWOLLE", "GRUENEWOLLE", "ROTEWOLLE", "SCHWARZEWOLLE",
+            
+            // English wool colors
+            "WHITEWOOL", "ORANGEWOOL", "MAGENTAWOOL", "LIGHTBLUEWOOL", "YELLOWWOOL",
+            "LIMEWOOL", "PINKWOOL", "GRAYWOOL", "LIGHTGRAYWOOL", "CYANWOOL",
+            "PURPLEWOOL", "BLUEWOOL", "BROWNWOOL", "GREENWOOL", "REDWOOL", "BLACKWOOL",
+            
+            // FARBIGES GLAS
+            "WEISSESGLAS", "ORANGESGLAS", "MAGENTAGLAS", "HELLBLAUESGLAS", "GELBESGLAS",
+            "HELLGRUENESGLAS", "ROSASGLAS", "DUNKELGRAUESGLAS", "HELLGRAUESGLAS", "TUERKISESGLAS",
+            "VIOLETTESGLAS", "BLAUESGLAS", "BRAUNESGLAS", "GRUENESGLAS", "ROTESGLAS", "SCHWARZESGLAS",
+            
+            "WHITEGLASS", "ORANGEGLASS", "MAGENTAGLASS", "LIGHTBLUEGLASS", "YELLOWGLASS",
+            "LIMEGLASS", "PINKGLASS", "GRAYGLASS", "LIGHTGRAYGLASS", "CYANGLASS",
+            "PURPLEGLASS", "BLUEGLASS", "BROWNGLASS", "GREENGLASS", "REDGLASS", "BLACKGLASS",
+            
+            // FARBIGER BETON
+            "WEISSERBETON", "ORANGERBETON", "MAGENTABETON", "HELLBLAUERBETON", "GELBERBETON",
+            "HELLGRUENERBETON", "ROSABETON", "DUNKELGRAUERBETON", "HELLGRAUERBETON", "TUERKISERBETON",
+            "VIOLETTERBETON", "BLAUERBETON", "BRAUNERBETON", "GRUENERBETON", "ROTERBETON", "SCHWARZERBETON",
+            
+            "WHITECONCRETE", "ORANGECONCRETE", "MAGENTACONCRETE", "LIGHTBLUECONCRETE", "YELLOWCONCRETE",
+            "LIMECONCRETE", "PINKCONCRETE", "GRAYCONCRETE", "LIGHTGRAYCONCRETE", "CYANCONCRETE",
+            "PURPLECONCRETE", "BLUECONCRETE", "BROWNCONCRETE", "GREENCONCRETE", "REDCONCRETE", "BLACKCONCRETE",
+            
+            // FARBIGE KERAMIK/TERRACOTTA
+            "WEISSEKERAMIK", "ORANGEKERAMIK", "MAGENTAKERAMIK", "HELLBLAUEKERAMIK", "GELBEKERAMIK",
+            "HELLGRUENEKERAMIK", "ROSAKERAMIK", "DUNKELGRAUEKERAMIK", "HELLGRAUEKERAMIK", "TUERKISEKERAMIK",
+            "VIOLETTEKERAMIK", "BLAUEKERAMIK", "BRAUNEKERAMIK", "GRUENEKERAMIK", "ROTEKERAMIK", "SCHWARZEKERAMIK",
+            
+            "WHITETERRACOTTA", "ORANGETERRACOTTA", "MAGENTATERRACOTTA", "LIGHTBLUETERRACOTTA", "YELLOWTERRACOTTA",
+            "LIMETERRACOTTA", "PINKTERRACOTTA", "GRAYTERRACOTTA", "LIGHTGRAYTERRACOTTA", "CYANTERRACOTTA",
+            "PURPLETERRACOTTA", "BLUETERRACOTTA", "BROWNTERRACOTTA", "GREENTERRACOTTA", "REDTERRACOTTA", "BLACKTERRACOTTA",
+            
+            // Nur Farben (für Wolle, Beton, etc.)
+            "WEISS", "ORANGE", "MAGENTA", "HELLBLAU", "GELB", "HELLGRUEN", "ROSA", 
+            "DUNKELGRAU", "HELLGRAU", "TUERKIS", "VIOLETT", "BLAU", "BRAUN", "GRUEN", "ROT", "SCHWARZ",
+            
+            "WHITE", "ORANGE", "MAGENTA", "LIGHTBLUE", "YELLOW", "LIME", "PINK",
+            "GRAY", "LIGHTGRAY", "CYAN", "PURPLE", "BLUE", "BROWN", "GREEN", "RED", "BLACK",
+            
+            // FARBIGE GLASSCHEIBEN
+            "WEISSESCHEIBE", "ORANGESCHEIBE", "MAGENTASCHEIBE", "HELLBLAUESCHEIBE", "GELBESCHEIBE",
+            "HELLGRUENESCHEIBE", "ROSASCHEIBE", "DUNKELGRAUESCHEIBE", "HELLGRAUESCHEIBE", "TUERKISESCHEIBE",
+            "VIOLETTESCHEIBE", "BLAUESCHEIBE", "BRAUNESCHEIBE", "GRUENESCHEIBE", "ROTESCHEIBE", "SCHWARZESCHEIBE",
+            
+            // Teppiche
+            "WEISSERTEPPICH", "ORANGERTEPPICH", "MAGENTATEPPICH", "HELLBLAUERTEPPICH", "GELBERTEPPICH",
+            "HELLGRUENERTEPPICH", "ROSATEPPICH", "DUNKELGRAUERTEPPICH", "HELLGRAUERTEPPICH", "TUERKISERTEPPICH",
+            "VIOLETTERTEPPICH", "BLAUERTEPPICH", "BRAUNERTEPPICH", "GRUENERTEPPICH", "ROTERTEPPICH", "SCHWARZERTEPPICH",
+            
+            "WHITECARPET", "ORANGECARPET", "MAGENTACARPET", "LIGHTBLUECARPET", "YELLOWCARPET",
+            "LIMECARPET", "PINKCARPET", "GRAYCARPET", "LIGHTGRAYCARPET", "CYANCARPET",
+            "PURPLECARPET", "BLUECARPET", "BROWNCARPET", "GREENCARPET", "REDCARPET", "BLACKCARPET",
+            
+            // Shulker Boxen
+            "WEISSESHULKERBOX", "ORANGESHULKERBOX", "MAGENTASHULKERBOX", "HELLBLAUESHULKERBOX", "GELBESHULKERBOX",
+            "HELLGRUENESHULKERBOX", "ROSASHULKERBOX", "DUNKELGRAUESHULKERBOX", "HELLGRAUESHULKERBOX", "TUERKISESHULKERBOX",
+            "VIOLETTESHULKERBOX", "BLAUESHULKERBOX", "BRAUNESHULKERBOX", "GRUENESHULKERBOX", "ROTESHULKERBOX", "SCHWARZESHULKERBOX"
+        ];
+
+        let history = [];
+        let solveTimeout = null;
+
+        function hideInstructions() {
+            const instructions = document.getElementById('instructions');
+            instructions.classList.add('hidden');
+        }
+
+        function normalizeText(text) {
+            return text.toUpperCase().replace(/[^A-Z_]/g, '');
+        }
+
+        function findMinecraftItem(scrambled) {
+            const normalized = normalizeText(scrambled);
+            const sortedScrambled = normalized.split('').sort().join('');
+            
+            for (let item of minecraftItems) {
+                const sortedItem = item.split('').sort().join('');
+                if (sortedItem === sortedScrambled) {
+                    return item;
+                }
+            }
+            
+            return null;
+        }
+
+        function addToHistory(scrambled, result) {
+            history.unshift({ scrambled, result, success: result !== null });
+            updateHistoryDisplay();
+        }
+
+        function updateHistoryDisplay() {
+            const historyList = document.getElementById('historyList');
+            
+            if (history.length === 0) {
+                historyList.innerHTML = '<div class="history-empty">Noch keine Einträge...</div>';
+                return;
+            }
+            
+            historyList.innerHTML = history.map(item => `
+                <div class="history-item ${item.success ? 'success' : 'failed'}">
+                    <span class="history-scrambled">${item.scrambled}</span>
+                    <span class="history-arrow">→</span>
+                    <span class="history-result ${!item.success ? 'failed' : ''}">${item.result || '❌ NICHT GEFUNDEN'}</span>
+                </div>
+            `).join('');
+        }
+
+        function clearHistory() {
+            if (history.length === 0) return;
+            
+            if (confirm('Möchtest du den Verlauf wirklich löschen?')) {
+                history = [];
+                updateHistoryDisplay();
+            }
+        }
+
+        function handleClipboardChange(text) {
+            if (!text || text.trim() === '') return;
+            
+            document.getElementById('clipboardText').textContent = text;
+            
+            const result = findMinecraftItem(text);
+            const resultElement = document.getElementById('resultText');
+            
+            if (result) {
+                resultElement.textContent = result;
+                resultElement.className = 'result-text';
+            } else {
+                resultElement.textContent = '❌ Kein Item gefunden!';
+                resultElement.className = 'result-text no-result';
+            }
+            
+            addToHistory(text, result);
+        }
+
+        // Clipboard API mit verbessertem Permission-Handling
+        let lastClipboard = '';
+        let clipboardCheckInterval = null;
+        let permissionGranted = false;
+        
+        async function checkClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text && text !== lastClipboard) {
+                    lastClipboard = text;
+                    handleClipboardChange(text);
+                    permissionGranted = true;
+                }
+            } catch (err) {
+                // Clipboard-Zugriff nicht verfügbar oder verweigert
+            }
+        }
+
+        // Starte Clipboard-Überwachung
+        clipboardCheckInterval = setInterval(checkClipboard, 500);
+
+        // Prüfe Zwischenablage wenn Tab wieder aktiv wird
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                // Tab ist wieder aktiv - prüfe sofort Zwischenablage
+                setTimeout(checkClipboard, 200);
+            }
+        });
+
+        // Prüfe auch bei Window-Focus
+        window.addEventListener('focus', () => {
+            setTimeout(checkClipboard, 200);
+        });
+
+        // Erkenne Strg+C (Kopieren) und löse automatisch
+        document.addEventListener('keydown', async (e) => {
+            // Prüfe ob Strg+C gedrückt wurde (oder Cmd+C auf Mac)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+                // Warte kurz, damit der Text kopiert wird
+                setTimeout(async () => {
+                    try {
+                        const text = await navigator.clipboard.readText();
+                        if (text && text.trim() !== '') {
+                            lastClipboard = text;
+                            handleClipboardChange(text);
+                        }
+                    } catch (err) {
+                        console.log('Clipboard-Zugriff verweigert');
+                    }
+                }, 100);
+            }
+        });
+
+        // Fallback: Paste Event (funktioniert immer ohne Berechtigung)
+        document.addEventListener('paste', (e) => {
+            const text = e.clipboardData.getData('text');
+            if (text) {
+                lastClipboard = text;
+                handleClipboardChange(text);
+            }
+        });
+
+        // Ermögliche auch manuelle Eingabe per Klick
+        document.getElementById('clipboardText').addEventListener('click', () => {
+            const input = prompt('Gib die durcheinander gewürfelten Buchstaben ein:');
+            if (input) {
+                handleClipboardChange(input);
+            }
+        });
+
+        // Auto-solve bei Eingabe im Input-Feld
+        document.getElementById('manualInput').addEventListener('input', (e) => {
+            const text = e.target.value.trim();
+            
+            // Warte kurz bevor gelöst wird (für flüssigeres Tippen)
+            clearTimeout(solveTimeout);
+            
+            if (text.length >= 3) {
+                solveTimeout = setTimeout(() => {
+                    handleClipboardChange(text);
+                }, 500); // 500ms Verzögerung nach letzter Eingabe
+            }
+        });
+
+        // Enter-Taste für sofortiges Lösen
+        document.getElementById('manualInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                clearTimeout(solveTimeout);
+                const text = e.target.value.trim();
+                if (text) {
+                    handleClipboardChange(text);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
